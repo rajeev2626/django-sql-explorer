@@ -5,7 +5,7 @@ from collections import Counter
 try:
     from django.urls import reverse_lazy
 except ImportError:
-    from django.core.urlresolvers import reverse_lazy
+    from django.urls import reverse_lazy
 
 from django.db import DatabaseError
 from django.db.models import Count

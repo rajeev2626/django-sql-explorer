@@ -6,7 +6,7 @@ from django.db import models, DatabaseError
 try:
     from django.urls import reverse
 except ImportError:
-    from django.core.urlresolvers import reverse
+    from django.urls import reverse
 
 from django.conf import settings
 
@@ -101,7 +101,7 @@ class Query(models.Model):
         if user:
             # In Django<1.10, is_anonymous was a method.
             try:
-                is_anonymous = user.is_anonymous()
+                is_anonymous = user.is_anonymous
             except TypeError:
                 is_anonymous = user.is_anonymous
             if is_anonymous:
@@ -210,10 +210,18 @@ class QueryResult(object):
 
     def process_rows(self):
         transforms = self._get_transforms()
-        if transforms:
-            for r in self.data:
+
+        for r in self.data:
+           if transforms:
                 for ix, t in transforms:
-                    r[ix] = t.format(str(r[ix]))
+                     if isinstance(r[ix], six.binary_type):
+                        r[ix] = (r[ix] == b'\x01')
+                     else:
+                        r[ix] = t.format(str(r[ix]))
+                                   
+           for indx in range(len(r)):
+               if isinstance(r[indx], six.binary_type):
+                      r[indx] = (r[indx] == b'\x01')
 
     def execute_query(self):
         cursor = self.connection.cursor()
