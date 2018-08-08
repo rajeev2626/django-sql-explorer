@@ -7,7 +7,7 @@ from django.db import models, DatabaseError
 if django.VERSION[1] >= 10:
     from django.urls import reverse
 else:
-    from django.core.urlresolvers import reverse
+    from django.urls import reverse
 from django.conf import settings
 
 from . import app_settings
@@ -96,7 +96,7 @@ class Query(models.Model):
         return get_params_for_url(self)
 
     def log(self, user=None):
-        if user and user.is_anonymous():
+        if user and user.is_anonymous:
             user = None
         ql = QueryLog(sql=self.final_sql(), query_id=self.id, run_by_user=user)
         ql.save()
@@ -201,10 +201,18 @@ class QueryResult(object):
 
     def process_rows(self):
         transforms = self._get_transforms()
-        if transforms:
-            for r in self.data:
+
+        for r in self.data:
+           if transforms:
                 for ix, t in transforms:
-                    r[ix] = t.format(str(r[ix]))
+                     if isinstance(r[ix], six.binary_type):
+                        r[ix] = (r[ix] == b'\x01')
+                     else:
+                        r[ix] = t.format(str(r[ix]))
+                                   
+           for indx in range(len(r)):
+               if isinstance(r[indx], six.binary_type):
+                      r[indx] = (r[indx] == b'\x01')
 
     def execute_query(self):
         conn = get_connection()
